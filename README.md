@@ -91,7 +91,8 @@ qual roda. O passo a passo está em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 Os três falam o mesmo contrato: a mesma API de notas de exemplo, erros RFC 9457 com o mesmo `code`
 estável e o mesmo vocabulário de `ErrorType`. O time escolhe o backend pela linguagem que domina,
-e o `HttpClient` do app lê os erros de qualquer um dos dois sem adaptação.
+e o app funciona com qualquer um dos dois sem mudar uma linha: lista, cria, abre notas e traduz
+os erros.
 
 ## Comece em um minuto
 
@@ -156,9 +157,9 @@ A troca acontece só em `src/bootstrap/app-dependencies.ts`: modelo, ViewModels 
 mudam. No emulador Android, rode `npm run adb` para que `localhost` alcance a
 máquina.
 
-> Os templates de backend publicam `POST /api/notes` e `GET /api/notes/{id}`. A listagem usa
-> `GET /api/notes?page=0&size=20`, que devolve `{ items, total }` no formato de `Page`; esse
-> endpoint precisa existir no backend para a lista funcionar no modo `http`.
+> Os dois templates de backend publicam o contrato que o app usa: `POST /api/notes`,
+> `GET /api/notes/{id}` e `GET /api/notes?page=0&size=20`, que devolve `{ items, total }` no
+> formato de `Page`, com as notas mais recentes primeiro.
 
 ## Debug
 
