@@ -11,6 +11,7 @@ Antes de alterar código, leia:
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - [`docs/TESTS.md`](docs/TESTS.md)
+- [`docs/adr`](docs/adr/README.md), as decisões já tomadas e o porquê
 
 Regras essenciais:
 
@@ -27,4 +28,5 @@ Regras essenciais:
 - features não importam umas às outras; `shared` não conhece features;
 - testes ficam ao lado do código e usam fakes; mocks sobre contratos do projeto são proibidos;
 - textos para o usuário em inglês e português, via i18n;
+- decisão com alternativas relevantes ou custo duradouro ganha um ADR em `docs/adr`;
 - o portão de entrega é `npm run verify`.

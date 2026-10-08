@@ -585,4 +585,4 @@ Não devem ser inventadas antes do primeiro caso concreto:
 - atualizações OTA (EAS Update) e estratégia de builds/lojas.
 
 Quando uma decisão dessas for tomada, ela deve atualizar este documento e, se tiver
-alternativas relevantes ou custo duradouro, ganhar um ADR.
+alternativas relevantes ou custo duradouro, ganhar um ADR em [`docs/adr`](adr/README.md).
