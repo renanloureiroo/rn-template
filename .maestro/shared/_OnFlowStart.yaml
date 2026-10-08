@@ -1,0 +1,6 @@
+appId: ${MAESTRO_APP_ID}
+---
+# Estado limpo a cada fluxo: o MMKV (notas locais e cache do TanStack Query) começa vazio.
+- launchApp:
+    clearState: true
+- runFlow: _ConnectDevClient.yaml

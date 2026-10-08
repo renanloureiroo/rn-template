@@ -1,0 +1,3 @@
+Marcador do template. Enquanto este arquivo existir, o projeto ainda não foi inicializado:
+rode o workflow "Template init" (Actions → Run workflow) ou scripts/init-template.sh. O script
+o remove ao terminar.

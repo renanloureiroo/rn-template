@@ -1,0 +1,36 @@
+appId: ${MAESTRO_APP_ID}
+---
+# Em development build, o app abre no launcher do expo-dev-client. Em vez de depender da
+# descoberta automática do Metro, abre o deep link do dev client apontando para o Metro local.
+- runFlow:
+    when:
+      visible: "DEVELOPMENT SERVERS|Development servers|Development Build"
+    commands:
+      - openLink: "exp+rntemplate://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+# O iOS pede confirmação para abrir o próprio app por deep link.
+- runFlow:
+    when:
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+# Espera o bundle carregar: aparece o app ou, na primeira abertura, o onboarding do dev menu.
+- extendedWaitUntil:
+    visible: "Continue|Notas|Notes"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+# O onboarding pode surgir logo depois do app.
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+# Aberto por deep link, o dev client mostra o menu de desenvolvimento por cima do app.
+- runFlow:
+    when:
+      visible: "Toggle performance monitor"
+    commands:
+      - tapOn: "Close"

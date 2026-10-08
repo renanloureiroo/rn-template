@@ -1,0 +1,12 @@
+appId: ${MAESTRO_APP_ID}
+name: Recusa título em branco com a mensagem da regra do modelo
+---
+- runFlow: ../shared/_OnFlowStart.yaml
+
+- extendedWaitUntil:
+    visible: "Nenhuma nota ainda|No notes yet"
+    timeout: 30000
+- tapOn: "Nova nota|New note"
+- tapOn: "Salvar|Save"
+
+- assertVisible: "O título é obrigatório.*|Title is required.*"

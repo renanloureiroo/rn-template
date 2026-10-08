@@ -1,0 +1,83 @@
+name: Template init
+
+# No repositório gerado por "Use this template", inicializa o projeto sob demanda
+# (Actions → Template init → Run workflow): renomeia a partir do nome do repositório e mantém
+# só a variante de navegação escolhida. No próprio template, valida que as duas variantes
+# continuam gerando um projeto que passa no verify.
+
+on:
+  workflow_dispatch:
+    inputs:
+      navigation:
+        description: Navegação do app
+        type: choice
+        options:
+          - expo-router
+          - react-navigation
+        default: expo-router
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  init:
+    if: github.event_name == 'workflow_dispatch' && github.event.repository.name != 'rn-template'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - name: Check marker
+        run: |
+          if [[ ! -f .template-init ]]; then
+            echo "O projeto já foi inicializado." >&2
+            exit 1
+          fi
+      - name: Initialize project
+        env:
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+          NAVIGATION: ${{ inputs.navigation }}
+        run: scripts/init-template.sh "$REPOSITORY_NAME" "--navigation=$NAVIGATION"
+      - name: Commit
+        env:
+          NAVIGATION: ${{ inputs.navigation }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: initialize project from template ($NAVIGATION)"
+          git push
+
+  verify-init:
+    if: github.event_name != 'workflow_dispatch' && github.event.repository.name == 'rn-template'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        navigation: [expo-router, react-navigation]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Initialize a sample project
+        run: |
+          git config user.name "ci"
+          git config user.email "ci@example.com"
+          scripts/init-template.sh orders-app "--navigation=${{ matrix.navigation }}"
+      - name: No template name left behind
+        run: |
+          if git grep -n -i -E 'rn-?template' -- . ':!.github/workflows'; then
+            echo "O nome do template sobrou no projeto gerado." >&2
+            exit 1
+          fi
+      - run: npm ci
+      - name: Verify sample project
+        run: npm run verify

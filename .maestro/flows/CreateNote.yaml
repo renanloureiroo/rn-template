@@ -1,0 +1,27 @@
+appId: ${MAESTRO_APP_ID}
+name: Cria uma nota e a encontra na lista depois de reiniciar o app
+---
+- runFlow: ../shared/_OnFlowStart.yaml
+
+- extendedWaitUntil:
+    visible: "Nenhuma nota ainda|No notes yet"
+    timeout: 30000
+- tapOn: "Nova nota|New note"
+
+- tapOn:
+    id: "note-title-input"
+- inputText: "Comprar café"
+- tapOn: "Salvar|Save"
+
+# A criação substitui a tela pelo detalhe da nota recém-criada.
+- assertVisible:
+    id: "note-title"
+    text: "Comprar café"
+
+# Reinicia sem limpar o estado: a nota sobrevive no armazenamento do dispositivo.
+- stopApp
+- launchApp
+- runFlow: ../shared/_ConnectDevClient.yaml
+- extendedWaitUntil:
+    visible: "Comprar café"
+    timeout: 30000
