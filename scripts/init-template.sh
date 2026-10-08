@@ -47,7 +47,7 @@ echo "Navegação:    $navigation"
 files=()
 while IFS= read -r file; do
   files+=("$file")
-done < <(git ls-files | grep -vE '^(\.github/workflows/|scripts/init-template\.sh$|\.template-init$)')
+done < <(git ls-files | grep -vE '^(\.github/workflows/|\.github/readme/|scripts/init-template\.sh$|\.template-init$)')
 
 for file in "${files[@]}"; do
   [[ -f "$file" ]] || continue
@@ -98,6 +98,6 @@ for doc in README.md AGENTS.md docs/*.md; do
   " "$doc"
 done
 
-git rm -q .template-init scripts/init-template.sh
+git rm -rq .template-init scripts/init-template.sh .github/readme
 git add -A
 echo "Pronto. Revise com 'git status' e rode npm ci && npm run verify."
