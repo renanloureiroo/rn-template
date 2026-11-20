@@ -1,7 +1,7 @@
 import { RemoteNotesRepository } from "@/features/notes/data/remote-notes-repository"
 import { aNote } from "@/features/notes/testing/note-fixtures"
 import { ErrorType } from "@/shared/errors/app-error"
-import { HttpClient } from "@/shared/http/http-client"
+import { FetchHttpClient } from "@/shared/http/fetch-http-client"
 import { FakeFetch } from "@test/support/fake-fetch"
 
 describe("RemoteNotesRepository", () => {
@@ -11,7 +11,7 @@ describe("RemoteNotesRepository", () => {
   beforeEach(() => {
     server = new FakeFetch()
     sut = new RemoteNotesRepository(
-      new HttpClient({ baseUrl: "http://api.test/api", fetch: server.fetch }),
+      new FetchHttpClient({ baseUrl: "http://api.test/api", fetch: server.fetch }),
     )
   })
 

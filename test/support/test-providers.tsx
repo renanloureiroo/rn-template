@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { type Metrics, SafeAreaProvider } from "react-native-safe-area-context"
 
+import { type SnackbarQueue, SnackbarQueueProvider } from "@/shared/snackbar/snackbar-queue"
 import { ThemeProvider } from "@/shared/theme/context"
 import { InMemoryKeyValueStorage } from "@test/support/in-memory-key-value-storage"
 
@@ -25,16 +26,24 @@ export function createTestQueryClient(): QueryClient {
 
 export interface TestProvidersProps {
   queryClient: QueryClient
+  // Fila de avisos que o teste lê; sem ela, cada render cria a sua.
+  snackbars?: SnackbarQueue
 }
 
 // Os providers que o AppShell monta e que não são de nenhuma feature: gestos, safe area, tema e
 // TanStack Query, sem persistência. Cada feature acrescenta o próprio provider por cima.
-export function TestProviders({ queryClient, children }: PropsWithChildren<TestProvidersProps>) {
+export function TestProviders({
+  queryClient,
+  snackbars,
+  children,
+}: PropsWithChildren<TestProvidersProps>) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider initialMetrics={TEST_WINDOW}>
         <ThemeProvider storage={new InMemoryKeyValueStorage()}>
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <QueryClientProvider client={queryClient}>
+            <SnackbarQueueProvider queue={snackbars}>{children}</SnackbarQueueProvider>
+          </QueryClientProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

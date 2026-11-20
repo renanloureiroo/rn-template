@@ -72,7 +72,7 @@ src
     ├── theme
     ├── i18n
     ├── errors                # AppError, mensagem por code, ErrorBoundary
-    ├── http                  # HttpClient e erros HTTP
+    ├── http                  # contrato HttpClient, FetchHttpClient, sessão e erros HTTP
     ├── storage               # contrato KeyValueStorage e implementação MMKV
     ├── query                 # QueryClient, persistência, foco/rede
     ├── pagination
@@ -235,7 +235,7 @@ export function createAppDependencies(
   environment: Environment = loadEnvironment(),
   storage: KeyValueStorage = new MmkvKeyValueStorage(),
 ): AppDependencies {
-  const http = new HttpClient({ baseUrl: environment.apiUrl })
+  const http = new FetchHttpClient({ baseUrl: environment.apiUrl })
   return {
     storage,
     notes: {
@@ -571,18 +571,35 @@ Plugin novo entra pelo mesmo caminho: instale o pacote e chame o hook em `DevToo
 - [ ] Textos novos em inglês e português.
 - [ ] `npm run verify` está verde.
 
-## 15. Decisões ainda abertas
+## 15. Infraestrutura comum
+
+O que toda feature usa sem reinventar, cada um com o seu ADR:
+
+| Peça                                                  | Onde                                     | ADR                                                              |
+| ----------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------- |
+| Ambientes Dev e produção (`APP_ENV`)                  | `config/app-environments.ts`             | [0001](adr/0001-ambientes-de-desenvolvimento-e-producao.md)      |
+| Entrega pelo fastlane com `eas build --local`         | `fastlane/`, [BUILDS.md](BUILDS.md)      | [0002](adr/0002-entrega-pelo-fastlane-com-build-local-do-eas.md) |
+| Formulários (`useSchemaForm`, `useFormField`)         | `src/shared/forms`, [FORMS.md](FORMS.md) | [0003](adr/0003-formularios-com-zod-e-react-hook-form.md)        |
+| `HttpClient` com sessão e renovação no `401`          | `src/shared/http`                        | [0004](adr/0004-http-client-como-contrato-e-renovacao-no-401.md) |
+| Avisos (`useSnackbar`) e `SnackbarHost`               | `src/shared/snackbar`                    | [0005](adr/0005-avisos-por-fila-global.md)                       |
+| Feedback tátil (`haptics().play`)                     | `src/shared/haptics`                     | [0006](adr/0006-feedback-tatil-por-evento.md)                    |
+| Classes de largura (`useWidthClass`) e `TwoPane`      | `src/shared/layout`                      | [0007](adr/0007-interface-responsiva-sem-trava-de-orientacao.md) |
+| Escrita otimista por padrão                           | mutations das ViewModels                 | [0008](adr/0008-mudancas-otimistas-por-padrao.md)                |
+| Abertura só com a splash nativa (`useLaunchRevealed`) | `src/shared/launch`                      | [0009](adr/0009-abertura-so-com-a-splash-nativa.md)              |
+
+## 16. Decisões ainda abertas
 
 Não devem ser inventadas antes do primeiro caso concreto:
 
 - features além do exemplo;
 - camada de casos de uso (seção 3);
-- autenticação, guarda de token (`expo-secure-store`) e renovação de sessão;
+- provedor de autenticação e guarda de token (`expo-secure-store`); a renovação no `401` já existe
+  ([ADR 0004](adr/0004-http-client-como-contrato-e-renovacao-no-401.md));
 - mutations offline com fila de sincronização (outbox no dispositivo);
 - crash reporting e analytics;
 - push notifications;
 - feature flags;
-- atualizações OTA (EAS Update) e estratégia de builds/lojas.
+- atualizações OTA (EAS Update).
 
 Quando uma decisão dessas for tomada, ela deve atualizar este documento e, se tiver
 alternativas relevantes ou custo duradouro, ganhar um ADR em [`docs/adr`](adr/README.md).

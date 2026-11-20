@@ -1,5 +1,7 @@
+import { provideHaptics } from "@/shared/haptics/haptics"
 import { initI18n } from "@/shared/i18n"
 import { loadDateFnsLocale } from "@/shared/utils/formatDate"
+import { testHaptics } from "@test/support/recording-haptics"
 
 // Fronteira de terceiro: o idioma do dispositivo vem do expo-localization. A suíte roda em
 // pt-BR com as traduções reais, então asserções sobre texto provam o que o usuário vê.
@@ -20,4 +22,10 @@ jest.mock("react-native-keyboard-controller", () =>
 beforeAll(async () => {
   await initI18n()
   loadDateFnsLocale()
+})
+
+// Feedback tátil ligado a um gravador: a ViewModel toca pelo módulo e o teste lê o que tocou.
+beforeEach(() => {
+  testHaptics.played = []
+  provideHaptics(testHaptics)
 })

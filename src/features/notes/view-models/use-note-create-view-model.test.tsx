@@ -5,6 +5,8 @@ import { createNoteDraftStore } from "@/features/notes/stores/note-draft-store"
 import { createNotesTestSetup } from "@/features/notes/testing/notes-test-setup"
 import { useNoteCreateViewModel } from "@/features/notes/view-models/use-note-create-view-model"
 import { networkUnavailable } from "@/shared/http/http-errors"
+import { testHaptics } from "@test/support/recording-haptics"
+import { currentSnackbar } from "@test/support/snackbars"
 
 describe("useNoteCreateViewModel", () => {
   let created: string[]
@@ -74,5 +76,23 @@ describe("useNoteCreateViewModel", () => {
     await act(() => result.current.changeTitle("Comprar café e pão"))
 
     await waitFor(() => expect(result.current.errorMessage).toBeUndefined())
+  })
+
+  it("avisa que a nota foi salva", async () => {
+    const { result, snackbars } = await renderViewModel()
+
+    await act(() => result.current.changeTitle("Comprar café"))
+    await act(() => result.current.submit())
+
+    await waitFor(() => expect(currentSnackbar(snackbars)?.text).toBe("Nota salva"))
+  })
+
+  it("faz a pessoa sentir a recusa", async () => {
+    const { result } = await renderViewModel()
+
+    await act(() => result.current.changeTitle("   "))
+    await act(() => result.current.submit())
+
+    await waitFor(() => expect(testHaptics.played).toEqual(["error"]))
   })
 })

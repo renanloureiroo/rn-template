@@ -1,0 +1,321 @@
+require "fileutils"
+require "json"
+require "securerandom"
+
+ROOT = File.expand_path("..", __dir__)
+EAS_CLI = "eas-cli@24.13.0"
+BUILDS_DIR = File.join(ROOT, "fastlane", "builds")
+SIGNING_DIR = File.join(ROOT, "fastlane", "signing")
+CREDENTIALS_FILE = File.join(ROOT, "credentials.json")
+PLAY_TRACKS = %w[internal alpha beta production].freeze
+OPENSSL = "/usr/bin/openssl"
+XCODE_ARCHIVES = File.expand_path("~/Library/Developer/Xcode/Archives")
+STARTED_AT = Time.now
+
+def required_env(name)
+  value = ENV[name].to_s.strip
+  UI.user_error!("Defina #{name} em fastlane/.env (modelo em fastlane/.env.example)") if value.empty?
+  value
+end
+
+def project_path(value)
+  File.expand_path(value, ROOT)
+end
+
+def in_root(*command)
+  Dir.chdir(ROOT) { sh(*command, log: false) }
+end
+
+def release_target(environment)
+  target = JSON.parse(in_root("npx", "tsx", "scripts/release-target.ts", environment).lines.last)
+  env_file = project_path(target["envFile"])
+  UI.user_error!("#{target['envFile']} ausente: o build de #{environment} sairia sem as EXPO_PUBLIC_*") unless File.exist?(env_file)
+  target
+end
+
+def release_notes(target, notes)
+  commit = in_root("git", "rev-parse", "--short", "HEAD").strip
+  base = "#{target['version']} (#{commit})"
+  notes.to_s.strip.empty? ? base : "#{base}: #{notes.strip}"
+end
+
+STORE_SUBMISSIONS_HEADING = "## Enviada às lojas".freeze
+
+# Acrescenta a linha do envio à seção "Enviada às lojas" das notas, criando a seção na primeira vez.
+def with_store_submission(body, line)
+  body = body.to_s.rstrip
+  return "#{body}\n#{line}\n" if body.include?(STORE_SUBMISSIONS_HEADING)
+
+  "#{body}\n\n#{STORE_SUBMISSIONS_HEADING}\n\n#{line}\n".lstrip
+end
+
+# Marca na release vX.Y.Z do GitHub que a versão foi enviada à loja (que build, quando e de que
+# commit). O envio já aconteceu quando isto roda: se o registro falhar (sem gh, sem login, release
+# ainda não criada pelo CI), só avisa e não derruba a lane.
+def record_store_submission(target, store:, build_number:, detail: nil)
+  tag = "v#{target['version']}"
+  commit = in_root("git", "rev-parse", "--short", "HEAD").strip
+  detail_text = detail.to_s.empty? ? "" : " (#{detail})"
+  line = "- #{store}: build #{build_number}#{detail_text}, #{Time.now.strftime('%d/%m/%Y %H:%M')}, commit #{commit}"
+  body = JSON.parse(in_root("gh", "release", "view", tag, "--json", "body")).fetch("body")
+  notes = File.join(BUILDS_DIR, "release-notes.md")
+  FileUtils.mkdir_p(BUILDS_DIR)
+  File.write(notes, with_store_submission(body, line))
+  in_root("gh", "release", "edit", tag, "--notes-file", notes)
+  UI.success("Envio registrado na release #{tag} do GitHub")
+rescue StandardError => e
+  UI.important("Envio à loja feito, mas não consegui registrá-lo na release #{tag} do GitHub: #{e.message}")
+end
+
+def asc_api_key
+  app_store_connect_api_key(
+    key_id: required_env("ASC_KEY_ID"),
+    issuer_id: required_env("ASC_ISSUER_ID"),
+    key_filepath: project_path(required_env("ASC_KEY_PATH"))
+  )
+end
+
+def play_json_key
+  project_path(required_env("PLAY_JSON_KEY_PATH"))
+end
+
+def eas_build(platform:, profile:, output:, build_number:)
+  FileUtils.mkdir_p(File.dirname(output))
+  ENV["APP_BUILD_NUMBER"] = build_number.to_s
+  Dir.chdir(ROOT) do
+    sh(
+      "npx", "--yes", EAS_CLI, "build",
+      "--local", "--non-interactive",
+      "--platform", platform,
+      "--profile", profile,
+      "--output", output
+    )
+  end
+  output
+ensure
+  ENV.delete("APP_BUILD_NUMBER")
+end
+
+def new_archives
+  Dir[File.join(XCODE_ARCHIVES, "*", "*.xcarchive")].select { |archive| File.mtime(archive) >= STARTED_AT }
+end
+
+def artifact_name(target)
+  target["displayName"].downcase.gsub(/[^a-z0-9]+/, "-").gsub(/^-|-$/, "")
+end
+
+def firebase_groups
+  ENV.fetch("FIREBASE_TESTER_GROUPS", "testers")
+end
+
+def keep_symbols(target, build_number)
+  tag = "v#{target['version']}"
+  archive = new_archives.max_by { |path| File.mtime(path) }
+  UI.user_error!("Nenhum arquivo do Xcode deste build em #{XCODE_ARCHIVES}") unless archive
+
+  zip = File.join(BUILDS_DIR, "#{artifact_name(target)}-#{target['version']}-#{build_number}-dsyms.zip")
+  FileUtils.mkdir_p(BUILDS_DIR)
+  sh("ditto", "-c", "-k", "--norsrc", "--noextattr", "--keepParent", File.join(archive, "dSYMs"), zip, log: false)
+  in_root("gh", "release", "upload", tag, zip, "--clobber")
+  UI.success("Símbolos do build #{build_number} anexados à release #{tag} do GitHub")
+  true
+rescue StandardError => e
+  UI.important("Símbolos não anexados à release #{tag}: #{e.message}. O arquivo do Xcode fica no disco.")
+  false
+ensure
+  FileUtils.rm_f(zip) if zip
+end
+
+def discard_build(output, keep_archives: false)
+  FileUtils.rm_f([output, File.join(BUILDS_DIR, "release-notes.md")])
+  unless keep_archives
+    FileUtils.rm_rf(new_archives)
+    Dir[File.join(XCODE_ARCHIVES, "*")].each { |day| Dir.rmdir(day) if Dir.empty?(day) }
+  end
+  Dir.rmdir(BUILDS_DIR) if Dir.exist?(BUILDS_DIR) && Dir.empty?(BUILDS_DIR)
+  UI.success("Build enviado e removido do disco")
+end
+
+def next_firebase_build_number(app_id)
+  latest = firebase_app_distribution_get_latest_release(app: app_id)
+  latest.nil? ? 1 : latest[:buildVersion].to_i + 1
+end
+
+def next_play_version_code(package_name)
+  codes = PLAY_TRACKS.flat_map do |track|
+    google_play_track_version_codes(package_name: package_name, track: track, json_key: play_json_key)
+  rescue StandardError => e
+    raise if e.message.include?("permission")
+
+    []
+  end
+  (codes.map(&:to_i).max || 0) + 1
+end
+
+def firebase_project_number(app_id)
+  app_id.split(":")[1].to_i
+end
+
+def register_firebase_devices(app_id)
+  devices = File.join(SIGNING_DIR, "firebase-udids.tsv")
+  FileUtils.mkdir_p(SIGNING_DIR)
+  FileUtils.rm_f(devices)
+  firebase_app_distribution_get_udids(project_number: firebase_project_number(app_id), output_file: devices)
+  register_devices(devices_file: devices) if File.exist?(devices)
+end
+
+def private_key_pem(key_path, destination)
+  if File.read(key_path, 64).to_s.start_with?("-----BEGIN")
+    FileUtils.cp(key_path, destination)
+  else
+    sh(OPENSSL, "pkcs12", "-in", key_path, "-nocerts", "-nodes", "-passin", "pass:", "-out", destination, log: false)
+  end
+end
+
+def write_ios_credentials(profiles:, certificate:, password:)
+  credentials = File.exist?(CREDENTIALS_FILE) ? JSON.parse(File.read(CREDENTIALS_FILE)) : {}
+  credentials["ios"] = profiles.transform_values do |profile|
+    {
+      "provisioningProfilePath" => profile.delete_prefix("#{ROOT}/"),
+      "distributionCertificate" => {
+        "path" => certificate.delete_prefix("#{ROOT}/"),
+        "password" => password
+      }
+    }
+  end
+  File.write(CREDENTIALS_FILE, "#{JSON.pretty_generate(credentials)}\n")
+end
+
+def install_ios_credentials(type:, targets:)
+  dir = File.join(SIGNING_DIR, type)
+  app_identifiers = targets.values
+  FileUtils.rm_rf(dir)
+  FileUtils.mkdir_p(dir)
+  match(type: type, app_identifier: app_identifiers, force_for_new_devices: type == "adhoc", output_path: dir)
+  match(type: type, app_identifier: app_identifiers, readonly: true, output_path: dir) if Dir[File.join(dir, "*.cer")].empty?
+
+  certificate = Dir[File.join(dir, "*.cer")].first
+  key = Dir[File.join(dir, "*.p12")].first
+  profiles = targets.transform_values do |app_identifier|
+    Dir[File.join(dir, "*_#{app_identifier}.mobileprovision")].first
+  end
+  missing = profiles.select { |_, profile| profile.nil? }.keys
+  UI.user_error!("O match não exportou o perfil de #{missing.join(', ')} para #{dir}") unless missing.empty?
+  UI.user_error!("O match não exportou certificado e chave para #{dir}") unless certificate && key
+
+  key_pem = File.join(dir, "key.pem")
+  certificate_pem = File.join(dir, "certificate.pem")
+  bundle = File.join(dir, "distribution.p12")
+  password = SecureRandom.hex(16)
+  private_key_pem(key, key_pem)
+  sh(OPENSSL, "x509", "-inform", "der", "-in", certificate, "-out", certificate_pem, log: false)
+  sh(
+    OPENSSL, "pkcs12", "-export",
+    "-inkey", key_pem, "-in", certificate_pem,
+    "-out", bundle, "-passout", "pass:#{password}",
+    log: false
+  )
+  FileUtils.rm_f([key_pem, certificate_pem, key])
+  write_ios_credentials(profiles: profiles, certificate: bundle, password: password)
+end
+
+platform :ios do
+  desc "Versão Dev (ad hoc) para os testadores do Firebase App Distribution. Opção: notes:\"texto\""
+  lane :dev do |options|
+    target = release_target("development")
+    app_id = required_env("FIREBASE_APP_ID_IOS")
+    asc_api_key
+    register_firebase_devices(app_id)
+    install_ios_credentials(type: "adhoc", targets: target["iosTargets"])
+    ipa = eas_build(
+      platform: "ios",
+      profile: "preview",
+      output: File.join(BUILDS_DIR, "#{artifact_name(target)}.ipa"),
+      build_number: next_firebase_build_number(app_id)
+    )
+    firebase_app_distribution(
+      app: app_id,
+      ipa_path: ipa,
+      groups: firebase_groups,
+      release_notes: release_notes(target, options[:notes])
+    )
+    discard_build(ipa)
+  end
+
+  desc "Versão de produção (App Store) para o TestFlight"
+  lane :prod do
+    target = release_target("production")
+    api_key = asc_api_key
+    install_ios_credentials(type: "appstore", targets: target["iosTargets"])
+    build_number = latest_testflight_build_number(
+      app_identifier: target["applicationId"],
+      api_key: api_key,
+      initial_build_number: 0
+    ) + 1
+    ipa = eas_build(
+      platform: "ios",
+      profile: "production",
+      output: File.join(BUILDS_DIR, "#{artifact_name(target)}.ipa"),
+      build_number: build_number
+    )
+    upload_to_testflight(ipa: ipa, api_key: api_key, skip_waiting_for_build_processing: true)
+    record_store_submission(target, store: "App Store (TestFlight)", build_number: build_number)
+    discard_build(ipa, keep_archives: !keep_symbols(target, build_number))
+  end
+end
+
+platform :android do
+  desc "Versão Dev (APK) para os testadores do Firebase App Distribution. Opção: notes:\"texto\""
+  lane :dev do |options|
+    target = release_target("development")
+    app_id = required_env("FIREBASE_APP_ID_ANDROID")
+    apk = eas_build(
+      platform: "android",
+      profile: "preview",
+      output: File.join(BUILDS_DIR, "#{artifact_name(target)}.apk"),
+      build_number: next_firebase_build_number(app_id)
+    )
+    firebase_app_distribution(
+      app: app_id,
+      android_artifact_type: "APK",
+      android_artifact_path: apk,
+      groups: firebase_groups,
+      release_notes: release_notes(target, options[:notes])
+    )
+    discard_build(apk)
+  end
+
+  desc "Versão de produção (AAB) para o Google Play. Opções: track:internal|alpha, status:draft|completed, upload:false"
+  lane :prod do |options|
+    target = release_target("production")
+    version_code = options[:version_code] || next_play_version_code(target["applicationId"])
+    aab = eas_build(
+      platform: "android",
+      profile: "production",
+      output: File.join(BUILDS_DIR, "#{artifact_name(target)}.aab"),
+      build_number: version_code
+    )
+    next if options[:upload].to_s == "false"
+
+    track = options[:track] || "internal"
+    status = options[:status] || "draft"
+    upload_to_play_store(
+      package_name: target["applicationId"],
+      json_key: play_json_key,
+      aab: aab,
+      track: track,
+      release_status: status,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+    record_store_submission(
+      target,
+      store: "Google Play",
+      build_number: version_code,
+      detail: "#{track}, #{status}"
+    )
+    discard_build(aab)
+  end
+end

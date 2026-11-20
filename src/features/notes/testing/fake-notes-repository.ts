@@ -4,13 +4,15 @@ import { offsetOf, type Page, type PageRequest } from "@/shared/pagination/page"
 
 // Implementação de teste do contrato, no lugar de mocks. Preserva o comportamento relevante
 // (identidade atribuída pela fonte, mais recentes primeiro, paginação) e ganha capacidades
-// explícitas de teste: `add`, `all` e `failNextWith`.
+// explícitas de teste: `add`, `all`, `failNextWith` e `holdResponses`.
 export class FakeNotesRepository implements NotesRepository {
   private readonly notes = new Map<string, Note>()
   private pendingFailure: Error | null = null
   private sequence = 0
+  private gate: Promise<void> | null = null
 
   async create(title: string): Promise<Note> {
+    await this.gate
     this.throwPendingFailure()
     this.sequence += 1
     return this.add({
@@ -22,11 +24,13 @@ export class FakeNotesRepository implements NotesRepository {
   }
 
   async findById(id: string): Promise<Note | null> {
+    await this.gate
     this.throwPendingFailure()
     return this.notes.get(id) ?? null
   }
 
   async list(request: PageRequest): Promise<Page<Note>> {
+    await this.gate
     this.throwPendingFailure()
     const ordered = this.all()
     const start = offsetOf(request)
@@ -44,6 +48,21 @@ export class FakeNotesRepository implements NotesRepository {
 
   failNextWith(error: Error): void {
     this.pendingFailure = error
+  }
+
+  /**
+   * Segura as respostas até a função devolvida ser chamada: o teste vê o estado de carregamento
+   * sem depender de quão rápido a fonte responde.
+   */
+  holdResponses(): () => void {
+    let release: () => void = () => undefined
+    this.gate = new Promise<void>((resolve) => {
+      release = () => {
+        this.gate = null
+        resolve()
+      }
+    })
+    return release
   }
 
   private throwPendingFailure(): void {

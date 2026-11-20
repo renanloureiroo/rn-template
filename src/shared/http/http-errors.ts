@@ -34,6 +34,7 @@ export const HttpErrorCode = {
   UNEXPECTED: "internal.unexpected",
   NETWORK_UNAVAILABLE: "network.unavailable",
   NETWORK_TIMEOUT: "network.timeout",
+  NETWORK_CANCELLED: "network.cancelled",
 } as const
 
 // O servidor respondeu com erro. O status vira ErrorType e o `code` do corpo é preservado, então
@@ -75,6 +76,11 @@ export function networkTimeout(timeoutMs: number): AppError {
     HttpErrorCode.NETWORK_TIMEOUT,
     `Servidor não respondeu em ${timeoutMs} ms`,
   )
+}
+
+// O pedido foi cancelado por quem pediu, pelo `signal`.
+export function networkCancelled(): AppError {
+  return new AppError(ErrorType.UNAVAILABLE, HttpErrorCode.NETWORK_CANCELLED, "Pedido cancelado")
 }
 
 function isProblemDetail(body: unknown): body is ProblemDetail {

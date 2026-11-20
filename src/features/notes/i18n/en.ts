@@ -12,6 +12,7 @@ const en = {
     titlePlaceholder: "What is this note about?",
     titleHelper: "{{length}} of {{max}} characters",
     save: "Save",
+    created: "Note saved",
     retry: "Try again",
   },
   // Mensagens indexadas pelo `code` estável dos erros (note.title_invalid, note.not_found...).

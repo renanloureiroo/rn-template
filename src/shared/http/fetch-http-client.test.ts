@@ -1,15 +1,20 @@
 import { AppError, ErrorType } from "@/shared/errors/app-error"
-import { HttpClient } from "@/shared/http/http-client"
+import { FetchHttpClient } from "@/shared/http/fetch-http-client"
 import { HttpError } from "@/shared/http/http-errors"
 import { FakeFetch } from "@test/support/fake-fetch"
+import { FakeSessionTokens } from "@test/support/fake-session-tokens"
 
-describe("HttpClient", () => {
+describe("FetchHttpClient", () => {
   let server: FakeFetch
-  let sut: HttpClient
+  let sut: FetchHttpClient
 
   beforeEach(() => {
     server = new FakeFetch()
-    sut = new HttpClient({ baseUrl: "http://api.test/api/", fetch: server.fetch, timeoutMs: 50 })
+    sut = new FetchHttpClient({
+      baseUrl: "http://api.test/api/",
+      fetch: server.fetch,
+      timeoutMs: 50,
+    })
   })
 
   it("monta a URL com a base, o caminho e a query, ignorando valores ausentes", async () => {
@@ -108,5 +113,71 @@ describe("HttpClient", () => {
       type: ErrorType.UNAVAILABLE,
       code: "network.timeout",
     })
+  })
+})
+
+describe("FetchHttpClient com sessão", () => {
+  let server: FakeFetch
+  let session: FakeSessionTokens
+  let sut: FetchHttpClient
+
+  beforeEach(() => {
+    server = new FakeFetch()
+    session = new FakeSessionTokens("velho")
+    sut = new FetchHttpClient({
+      baseUrl: "http://api.test/api",
+      fetch: server.fetch,
+      session: {
+        accessToken: session.accessToken,
+        refreshAccessToken: session.refreshAccessToken,
+      },
+    })
+  })
+
+  it("envia o token da sessão no Authorization", async () => {
+    server.respondWith(200, { ok: true })
+
+    await sut.request({ method: "GET", path: "/me" })
+
+    expect(server.requests[0]?.headers.Authorization).toBe("Bearer velho")
+  })
+
+  it("renova o token no 401 e refaz o pedido com o novo", async () => {
+    session.renewTo("novo")
+    server.respondWith(401, { code: "auth.unauthenticated" })
+    server.respondWith(200, { name: "Ana" })
+
+    const response = await sut.request<{ name: string }>({ method: "GET", path: "/me" })
+
+    expect(response.body).toEqual({ name: "Ana" })
+    expect(server.requests.map((request) => request.headers.Authorization)).toEqual([
+      "Bearer velho",
+      "Bearer novo",
+    ])
+    expect(session.refreshes).toBe(1)
+  })
+
+  it("devolve o 401 quando a sessão acabou", async () => {
+    session.renewTo(null)
+    server.respondWith(401, { code: "auth.unauthenticated" })
+
+    const error = await sut.request({ method: "GET", path: "/me" }).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(HttpError)
+    expect(error).toMatchObject({ status: 401, code: "auth.unauthenticated" })
+  })
+})
+
+describe("FetchHttpClient com cancelamento", () => {
+  it("traduz o cancelamento pelo signal em network.cancelled", async () => {
+    const server = new FakeFetch()
+    server.hang()
+    const sut = new FetchHttpClient({ baseUrl: "http://api.test", fetch: server.fetch })
+    const controller = new AbortController()
+
+    const pending = sut.request({ method: "GET", path: "/slow", signal: controller.signal })
+    controller.abort()
+
+    await expect(pending).rejects.toMatchObject({ code: "network.cancelled" })
   })
 })

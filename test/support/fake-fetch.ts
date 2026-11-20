@@ -1,4 +1,4 @@
-import type { FetchFn } from "@/shared/http/http-client"
+import type { FetchFn } from "@/shared/http/fetch-http-client"
 
 export interface RecordedRequest {
   readonly url: string
