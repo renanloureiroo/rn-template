@@ -5,8 +5,8 @@
 ![rn-template: React Native com arquitetura](.github/readme/banner.png)
 
 [![CI](https://github.com/renanloureiroo/rn-template/actions/workflows/ci.yml/badge.svg)](https://github.com/renanloureiroo/rn-template/actions/workflows/ci.yml)
-![Expo SDK 57](https://img.shields.io/badge/Expo_SDK-57-000020?logo=expo&logoColor=white)
-![React Native 0.86](https://img.shields.io/badge/React_Native-0.86-61DAFB?logo=react&logoColor=black)
+![Expo SDK 58](https://img.shields.io/badge/Expo_SDK-58-000020?logo=expo&logoColor=white)
+![React Native 0.88](https://img.shields.io/badge/React_Native-0.88-61DAFB?logo=react&logoColor=black)
 ![TypeScript estrito](https://img.shields.io/badge/TypeScript-estrito-3178C6?logo=typescript&logoColor=white)
 ![Testes sem mocks](https://img.shields.io/badge/testes-fakes%2C_sem_mocks-2EA44F)
 
@@ -49,19 +49,23 @@ como impedir que alguém atravesse as camadas numa sexta à tarde.
 
 ## O que vem pronto
 
-| Área              | Escolha                                                               |
-| ----------------- | --------------------------------------------------------------------- |
-| Plataforma        | Expo SDK 57, React Native 0.86 (nova arquitetura, Hermes), TS estrito |
-| UI                | design system sobre Expo UI, Reanimated e Gesture Handler             |
-| Dados do servidor | TanStack Query com cache persistido no MMKV v4                        |
-| Estado do cliente | Zustand, com store por provider e seletores atômicos                  |
-| Navegação         | Expo Router ou React Navigation, escolhida na inicialização           |
-| i18n              | i18next, inglês e português                                           |
-| Debug             | React Native DevTools com Rozenite (Query, MMKV, rede, navegação)     |
-| Testes            | Jest, React Native Testing Library e Maestro                          |
-| Qualidade         | ESLint, Prettier, dependency-cruiser e CI no GitHub Actions           |
-| Builds            | perfis EAS locais para simulador, dispositivo, preview e produção     |
-| Documentação      | arquitetura, estratégia de testes, ADRs e `AGENTS.md`                 |
+| Área              | Escolha                                                                        |
+| ----------------- | ------------------------------------------------------------------------------ |
+| Plataforma        | Expo SDK 58, React Native 0.88 (nova arquitetura, Hermes), TS estrito          |
+| Ambientes         | versões Dev e produção lado a lado no aparelho, escolhidas por `APP_ENV`       |
+| UI                | design system sobre Expo UI, Reanimated e Gesture Handler, layout responsivo   |
+| Dados do servidor | TanStack Query com cache persistido no MMKV v4                                 |
+| HTTP              | `HttpClient` como contrato, com token da sessão e renovação única no `401`     |
+| Formulários       | zod e React Hook Form atrás de `useSchemaForm`, mensagens pelo `code`          |
+| Estado do cliente | Zustand, com store por provider e seletores atômicos                           |
+| Feedback          | fila global de avisos e feedback tátil por evento                              |
+| Navegação         | Expo Router ou React Navigation, escolhida na inicialização                    |
+| i18n              | i18next, inglês e português                                                    |
+| Debug             | React Native DevTools com Rozenite (Query, MMKV, rede, navegação)              |
+| Testes            | Jest, React Native Testing Library e Maestro                                   |
+| Qualidade         | ESLint, Prettier, dependency-cruiser e CI no GitHub Actions                    |
+| Entrega           | fastlane com `eas build --local`: Firebase App Distribution, TestFlight e Play |
+| Documentação      | arquitetura, testes, formulários, builds, ADRs, Spec Kit e `AGENTS.md`         |
 
 ## Arquitetura em 30 segundos
 
@@ -115,7 +119,7 @@ em [Usando como template](#usando-como-template).
 
 <!-- template:end -->
 
-App mobile com Expo SDK 57 (React Native 0.86), organizado por feature com MVVM, design system
+App mobile com Expo SDK 58 (React Native 0.88), organizado por feature com MVVM, design system
 próprio sobre Expo UI, TanStack Query com cache persistido no MMKV, Zustand, Jest e Maestro.
 
 A feature `notes` mostra o caminho completo: View → ViewModel → TanStack Query → repositório
