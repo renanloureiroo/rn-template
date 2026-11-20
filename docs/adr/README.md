@@ -40,6 +40,14 @@ anterior; no antigo, só o status muda para **Substituído por NNNN**.
 
 ## Índice
 
-| ADR | Título                            | Status |
-| --- | --------------------------------- | ------ |
-| —   | Nenhuma decisão registrada ainda. | —      |
+| ADR                                                          | Título                                       | Status |
+| ------------------------------------------------------------ | -------------------------------------------- | ------ |
+| [0001](0001-ambientes-de-desenvolvimento-e-producao.md)      | Ambientes de desenvolvimento e produção      | Aceito |
+| [0002](0002-entrega-pelo-fastlane-com-build-local-do-eas.md) | Entrega pelo fastlane com build local do EAS | Aceito |
+| [0003](0003-formularios-com-zod-e-react-hook-form.md)        | Formulários com zod e React Hook Form        | Aceito |
+| [0004](0004-http-client-como-contrato-e-renovacao-no-401.md) | HttpClient como contrato e renovação no 401  | Aceito |
+| [0005](0005-avisos-por-fila-global.md)                       | Avisos por fila global                       | Aceito |
+| [0006](0006-feedback-tatil-por-evento.md)                    | Feedback tátil por evento                    | Aceito |
+| [0007](0007-interface-responsiva-sem-trava-de-orientacao.md) | Interface responsiva sem trava de orientação | Aceito |
+| [0008](0008-mudancas-otimistas-por-padrao.md)                | Mudanças otimistas por padrão                | Aceito |
+| [0009](0009-abertura-so-com-a-splash-nativa.md)              | Abertura só com a splash nativa              | Aceito |

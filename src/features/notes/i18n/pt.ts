@@ -14,6 +14,7 @@ const pt: typeof en = {
     titlePlaceholder: "Sobre o que é esta nota?",
     titleHelper: "{{length}} de {{max}} caracteres",
     save: "Salvar",
+    created: "Nota salva",
     retry: "Tentar de novo",
   },
   errors: {

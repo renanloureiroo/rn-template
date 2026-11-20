@@ -24,12 +24,20 @@ module.exports = {
     "<rootDir>/dist/",
     "<rootDir>/.claude/",
   ],
-  // Setup oficial do Gesture Handler para Jest (mocks dos módulos nativos dele).
-  setupFiles: ["react-native-gesture-handler/jestSetup"],
+  // Setup oficial do Gesture Handler para Jest (mocks dos módulos nativos dele). Antes dele, a
+  // ligação com o runtime de UI do Worklets vai para a versão web, a mesma que o Worklets roda
+  // nos testes.
+  setupFiles: ["<rootDir>/test/gesture-handler-setup.ts", "react-native-gesture-handler/jestSetup"],
+  // Reanimated e Worklets rodam a implementação web (JS) nos testes, como pede a documentação
+  // deles (o resolver do Reanimated já inclui o do Worklets); as animações andam com os timers do
+  // Jest.
+  resolver: "react-native-reanimated/jest/resolver",
   setupFilesAfterEnv: ["<rootDir>/test/setup.ts"],
   moduleNameMapper: {
     // Fake da fronteira de terceiro: ver test/support/expo-ui-fake.tsx.
     "^@expo/ui$": "<rootDir>/test/support/expo-ui-fake.tsx",
+    // Fake da fronteira de terceiro: ver test/support/expo-haptics-fake.ts.
+    "^expo-haptics$": "<rootDir>/test/support/expo-haptics-fake.ts",
     "^@/(.*)$": "<rootDir>/src/$1",
     "^@test/(.*)$": "<rootDir>/test/$1",
     "^@assets/(.*)$": "<rootDir>/assets/$1",

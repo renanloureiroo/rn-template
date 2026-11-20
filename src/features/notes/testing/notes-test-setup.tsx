@@ -4,6 +4,7 @@ import { render } from "@testing-library/react-native"
 import { NotesProvider } from "@/features/notes/NotesProvider"
 import { createNoteDraftStore, type NoteDraftStore } from "@/features/notes/stores/note-draft-store"
 import { FakeNotesRepository } from "@/features/notes/testing/fake-notes-repository"
+import { createSnackbarQueue } from "@/shared/snackbar/snackbar-queue"
 import { createTestQueryClient, TestProviders } from "@test/support/test-providers"
 
 export interface NotesTestOptions {
@@ -17,10 +18,11 @@ export function createNotesTestSetup(options: NotesTestOptions = {}) {
   const notes = options.notes ?? new FakeNotesRepository()
   const draft = options.draft ?? createNoteDraftStore()
   const queryClient = createTestQueryClient()
+  const snackbars = createSnackbarQueue()
 
   function wrapper({ children }: PropsWithChildren) {
     return (
-      <TestProviders queryClient={queryClient}>
+      <TestProviders queryClient={queryClient} snackbars={snackbars}>
         <NotesProvider dependencies={{ notesRepository: notes }} draftStore={draft}>
           {children}
         </NotesProvider>
@@ -28,7 +30,7 @@ export function createNotesTestSetup(options: NotesTestOptions = {}) {
     )
   }
 
-  return { notes, draft, queryClient, wrapper }
+  return { notes, draft, queryClient, snackbars, wrapper }
 }
 
 // Para testes de View: renderiza a tela dentro da feature montada com fakes.

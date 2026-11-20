@@ -1,5 +1,6 @@
 import type { StyleProp } from "react-native"
 
+import { breakpoints } from "@/shared/theme/breakpoints"
 import { colors as colorsLight } from "@/shared/theme/colors"
 import { colors as colorsDark } from "@/shared/theme/colorsDark"
 import { spacing as spacingLight } from "@/shared/theme/spacing"
@@ -20,6 +21,7 @@ export type Spacing = typeof spacingLight | typeof spacingDark
 // These two are consistent across themes.
 export type Timing = typeof timing
 export type Typography = typeof typography
+export type Breakpoints = typeof breakpoints
 
 // The overall Theme object should contain all of the data you need to style your app.
 export interface Theme {
@@ -27,6 +29,7 @@ export interface Theme {
   spacing: Spacing
   typography: Typography
   timing: Timing
+  breakpoints: Breakpoints
   isDark: boolean
 }
 

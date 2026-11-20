@@ -1,3 +1,4 @@
+import { breakpoints } from "@/shared/theme/breakpoints"
 import { colors as colorsLight } from "@/shared/theme/colors"
 import { colors as colorsDark } from "@/shared/theme/colorsDark"
 import { spacing as spacingLight } from "@/shared/theme/spacing"
@@ -12,6 +13,7 @@ export const lightTheme: Theme = {
   spacing: spacingLight,
   typography,
   timing,
+  breakpoints,
   isDark: false,
 }
 export const darkTheme: Theme = {
@@ -19,5 +21,6 @@ export const darkTheme: Theme = {
   spacing: spacingDark,
   typography,
   timing,
+  breakpoints,
   isDark: true,
 }

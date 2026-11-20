@@ -9,9 +9,12 @@ import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-c
 import type { AppDependencies } from "@/bootstrap/app-dependencies"
 import { DevTools } from "@/bootstrap/DevTools"
 import { NotesProvider } from "@/features/notes/NotesProvider"
+import { SnackbarHost } from "@/shared/components/Snackbar"
 import { ErrorBoundary } from "@/shared/errors/ErrorBoundary"
 import { initI18n } from "@/shared/i18n"
+import { launchReveal } from "@/shared/launch/launch-reveal"
 import { QueryProvider } from "@/shared/query/QueryProvider"
+import { SnackbarQueueProvider } from "@/shared/snackbar/snackbar-queue"
 import { ThemeProvider } from "@/shared/theme/context"
 import { customFontsToLoad } from "@/shared/theme/typography"
 import { loadDateFnsLocale } from "@/shared/utils/formatDate"
@@ -43,7 +46,9 @@ export function AppShell({ dependencies, children }: PropsWithChildren<AppShellP
 
   useEffect(() => {
     if (isReady) {
-      SplashScreen.hideAsync().catch(() => {})
+      SplashScreen.hideAsync()
+        .catch(() => {})
+        .finally(() => launchReveal.reveal())
     }
   }, [isReady])
 
@@ -61,8 +66,11 @@ export function AppShell({ dependencies, children }: PropsWithChildren<AppShellP
           <ThemeProvider storage={dependencies.storage}>
             <ErrorBoundary catchErrors="always">
               <QueryProvider storage={dependencies.storage}>
-                <DevTools storage={dependencies.storage} />
-                <NotesProvider dependencies={dependencies.notes}>{children}</NotesProvider>
+                <SnackbarQueueProvider>
+                  <DevTools storage={dependencies.storage} />
+                  <NotesProvider dependencies={dependencies.notes}>{children}</NotesProvider>
+                  <SnackbarHost />
+                </SnackbarQueueProvider>
               </QueryProvider>
             </ErrorBoundary>
           </ThemeProvider>
