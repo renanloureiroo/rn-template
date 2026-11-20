@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react-native"
+import { act, renderHook, waitFor } from "@testing-library/react-native"
 
 import { aNote } from "@/features/notes/testing/note-fixtures"
 import { createNotesTestSetup } from "@/features/notes/testing/notes-test-setup"
@@ -11,11 +11,14 @@ describe("useNoteDetailViewModel", () => {
       aNote({ title: "Comprar café", createdAt: "2026-03-10T12:00:00.000Z" }),
     )
 
+    const release = setup.notes.holdResponses()
+
     const { result } = await renderHook(() => useNoteDetailViewModel(note.id), {
       wrapper: setup.wrapper,
     })
 
     expect(result.current.state).toEqual({ status: "loading" })
+    await act(async () => release())
     await waitFor(() =>
       expect(result.current.state).toEqual({
         status: "ready",

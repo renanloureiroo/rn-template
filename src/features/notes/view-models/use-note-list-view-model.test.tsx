@@ -13,9 +13,12 @@ describe("useNoteListViewModel", () => {
   }
 
   it("começa carregando e fica vazio quando não há notas", async () => {
-    const { result } = await renderViewModel()
+    const setup = createNotesTestSetup()
+    const release = setup.notes.holdResponses()
+    const { result } = await renderViewModel(setup)
 
     expect(result.current.state).toEqual({ status: "loading" })
+    await act(async () => release())
     await waitFor(() => expect(result.current.state).toEqual({ status: "empty" }))
   })
 
