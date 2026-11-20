@@ -2,7 +2,7 @@ import { type Environment, loadEnvironment, NotesDataSource } from "@/bootstrap/
 import { LocalNotesRepository } from "@/features/notes/data/local-notes-repository"
 import { RemoteNotesRepository } from "@/features/notes/data/remote-notes-repository"
 import type { NotesDependencies } from "@/features/notes/NotesProvider"
-import { HttpClient } from "@/shared/http/http-client"
+import { FetchHttpClient } from "@/shared/http/fetch-http-client"
 import type { KeyValueStorage } from "@/shared/storage/key-value-storage"
 import { MmkvKeyValueStorage } from "@/shared/storage/mmkv-key-value-storage"
 
@@ -19,7 +19,7 @@ export function createAppDependencies(
   environment: Environment = loadEnvironment(),
   storage: KeyValueStorage = new MmkvKeyValueStorage(),
 ): AppDependencies {
-  const http = new HttpClient({ baseUrl: environment.apiUrl })
+  const http = new FetchHttpClient({ baseUrl: environment.apiUrl })
 
   return {
     storage,

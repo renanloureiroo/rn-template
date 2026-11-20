@@ -1,5 +1,5 @@
 import { AppError, ErrorType } from "@/shared/errors/app-error"
-import { errorMessageOf } from "@/shared/errors/error-message"
+import { errorMessageOf, errorMessageOfCode } from "@/shared/errors/error-message"
 import { HttpError, networkUnavailable } from "@/shared/http/http-errors"
 
 describe("errorMessageOf", () => {
@@ -29,5 +29,15 @@ describe("errorMessageOf", () => {
     ["valor que não é erro", "falhou"],
   ])("usa a mensagem genérica para %s, sem vazar a mensagem técnica", (_, error) => {
     expect(errorMessageOf(error)).toBe("Algo inesperado aconteceu. Tente de novo.")
+  })
+})
+
+describe("errorMessageOfCode", () => {
+  it("prefere o texto do mapa da tela", () => {
+    expect(errorMessageOfCode("note.not_found", { "note.not_found": "Sumiu." })).toBe("Sumiu.")
+  })
+
+  it("cai na tradução do code quando o mapa não tem o texto", () => {
+    expect(errorMessageOfCode("note.not_found")).toBe("Esta nota não existe mais.")
   })
 })
