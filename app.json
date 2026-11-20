@@ -36,7 +36,8 @@
         "backgroundColor": "#191015"
       }
     ],
-    "expo-build-properties"
+    "expo-build-properties",
+    "./plugins/with-xcode-identity"
   ],
   "experiments": {
     "tsconfigPaths": true
