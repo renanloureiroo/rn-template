@@ -1,13 +1,16 @@
 {
   "cli": {
-    "version": ">= 3.15.1"
+    "version": "24.13.0",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
       "extends": "production",
       "distribution": "internal",
+      "env": { "APP_ENV": "development" },
       "android": {
-        "gradleCommand": ":app:assembleDebug"
+        "gradleCommand": ":app:assembleDebug",
+        "withoutCredentials": true
       },
       "ios": {
         "buildConfiguration": "Debug",
@@ -16,7 +19,6 @@
     },
     "development:device": {
       "extends": "development",
-      "distribution": "internal",
       "ios": {
         "buildConfiguration": "Debug",
         "simulator": false
@@ -25,16 +27,13 @@
     "preview": {
       "extends": "production",
       "distribution": "internal",
-      "ios": { "simulator": true },
-      "android": { "buildType": "apk" }
+      "env": { "APP_ENV": "development" },
+      "android": { "buildType": "apk", "withoutCredentials": true }
     },
-    "preview:device": {
-      "extends": "preview",
-      "ios": { "simulator": false }
-    },
-    "production": {}
-  },
-  "submit": {
-    "production": {}
+    "production": {
+      "env": { "APP_ENV": "production" },
+      "android": { "credentialsSource": "local" },
+      "ios": { "credentialsSource": "local" }
+    }
   }
 }

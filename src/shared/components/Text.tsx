@@ -55,7 +55,10 @@ export interface TextProps extends RNTextProps {
  * @param {TextProps} props - The props for the `Text` component.
  * @returns {JSX.Element} The rendered `Text` component.
  */
-export const Text = forwardRef(function Text(props: TextProps, ref: ForwardedRef<ComponentRef<typeof RNText>>) {
+export const Text = forwardRef(function Text(
+  props: TextProps,
+  ref: ForwardedRef<ComponentRef<typeof RNText>>,
+) {
   const { weight, size, tx, txOptions, text, children, style: $styleOverride, ...rest } = props
   const { themed } = useAppTheme()
 

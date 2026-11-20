@@ -54,6 +54,10 @@ buck-out/
 **/fastlane/Preview.html
 **/fastlane/screenshots
 **/fastlane/test_output
+**/fastlane/README.md
+/fastlane/builds/
+/fastlane/signing/
+/fastlane/.env
 
 # Bundle artifact
 *.jsbundle
@@ -91,3 +95,11 @@ dependency-graph.svg
 
 # Expo export (npm run bundle:check)
 dist/
+
+# Credenciais de assinatura do build local (eas.json credentialsSource: local) e binários
+credentials.json
+*.apk
+*.aab
+
+# Vídeos das execuções do E2E (Maestro), só para conferência local
+.maestro/recordings/

@@ -1,11 +1,8 @@
 {
-  "name": "RnTemplate",
   "slug": "RnTemplate",
-  "scheme": "rntemplate",
-  "version": "1.0.0",
-  "orientation": "portrait",
+  "version": "0.0.1",
+  "orientation": "default",
   "userInterfaceStyle": "automatic",
-  "icon": "./assets/images/app-icon-all.png",
   "updates": {
     "fallbackToCacheTimeout": 0
   },
@@ -13,19 +10,14 @@
   "jsEngine": "hermes",
   "assetBundlePatterns": ["**/*"],
   "android": {
-    "icon": "./assets/images/app-icon-android-legacy.png",
-    "package": "com.rntemplate",
-    "adaptiveIcon": {
-      "foregroundImage": "./assets/images/app-icon-android-adaptive-foreground.png",
-      "backgroundImage": "./assets/images/app-icon-android-adaptive-background.png"
-    },
     "allowBackup": false,
     "edgeToEdgeEnabled": true
   },
   "ios": {
-    "icon": "./assets/images/app-icon-ios.png",
     "supportsTablet": true,
-    "bundleIdentifier": "com.rntemplate"
+    "config": {
+      "usesNonExemptEncryption": false
+    }
   },
   "web": {
     "favicon": "./assets/images/app-icon-web-favicon.png",
